@@ -96,6 +96,7 @@ body{background:#f4f6f9;padding:20px}
 
 <script type="module">
 import { loadProjects, saveProject as saveProjectDB, deleteProjectDB, supabase } from './supabase.js';
+let projectsChannel = null;
 // ----------------------------------
 // AUTH GUARD (CORRECT VERSION)
 // ----------------------------------
@@ -107,26 +108,43 @@ if (!session) {
 }
 
 // Watch auth state changes
-supabase.auth.onAuthStateChange((event, session) => {
+supabase.auth.onAuthStateChange(async (event, session) => {
+
   if (!session) {
     window.location.replace('login.html');
-} else {
-  document.body.style.display = 'block';
-}});
-const $=id=>document.getElementById(id);
-let tenders = [];
-async function initData() {
-
-  const dbProjects = await loadProjects();
-
-  if (dbProjects.length > 0) {
-    tenders = dbProjects;
-  } else {
-    tenders = JSON.parse(localStorage.getItem('tenders') || '[]');
+    return;
   }
 
+  // ---------- INITIAL DATA LOAD ----------
+  const dbProjects = await loadProjects();
+  tenders = dbProjects;
   render();
-}
+
+  // ---------- START REALTIME ----------
+  if (projectsChannel) {
+    supabase.removeChannel(projectsChannel);
+  }
+
+  projectsChannel = supabase
+    .channel('projects-changes')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'projects'
+      },
+      async () => {
+        const dbProjects = await loadProjects();
+        tenders = dbProjects;
+        render();
+      }
+    )
+    .subscribe();
+
+  // ---------- SHOW PAGE ----------
+  document.body.style.display = 'block';
+});
 const COMPANY_BUDGET=1000000;
 
 $('toggleForm').onclick=()=>$('formPanel').style.display=$('formPanel').style.display==='none'?'block':'none';
@@ -241,8 +259,28 @@ $('tbody').insertAdjacentHTML('beforeend',`<tr>
 });
 }
 
-function updateStatus(id,v){const t=tenders.find(x=>x.id===id);if(t){t.status=v;localStorage.setItem('tenders',JSON.stringify(tenders));render();}}
-function toggleContract(id){const t=tenders.find(x=>x.id===id);if(t){t.contract=t.contract==='Yes'?'No':'Yes';localStorage.setItem('tenders',JSON.stringify(tenders));render();}}
+async function updateStatus(id,v){
+  const t=tenders.find(x=>x.id===id);
+  if(!t) return;
+
+  t.status=v;
+
+  await saveProjectDB(t);
+
+  localStorage.setItem('tenders',JSON.stringify(tenders));
+  render();
+}
+async function toggleContract(id){
+  const t=tenders.find(x=>x.id===id);
+  if(!t) return;
+
+  t.contract=t.contract==='Yes'?'No':'Yes';
+
+  await saveProjectDB(t);
+
+  localStorage.setItem('tenders',JSON.stringify(tenders));
+  render();
+}
 function quickEdit(id){const t=tenders.find(x=>x.id===id);if(!t)return;$('formPanel').style.display='block';$('tid').value=t.id;$('pname').value=t.name;$('palias').value=t.alias;$('customer').value=t.customer;$('announceDate').value=t.announceDate;$('submissionDate').value=t.submissionDate||'';$('budget').value=t.projectValue;$('status').value=t.status;$('contract').value=t.contract;}
 async function deleteProject(id){
 
@@ -267,27 +305,7 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
   await supabase.auth.signOut();
   window.location.replace('login.html');
 });
-initData();
-// ----------------------------------
-// REALTIME PROJECT SYNC
-// ----------------------------------
 
-supabase
-  .channel('projects-changes')
-  .on(
-    'postgres_changes',
-    {
-      event: '*',
-      schema: 'public',
-      table: 'projects'
-    },
-    async () => {
-      const dbProjects = await loadProjects();
-      tenders = dbProjects;
-      render();
-    }
-  )
-  .subscribe();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
