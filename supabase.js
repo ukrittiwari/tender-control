@@ -61,3 +61,15 @@ export async function saveProject(project) {
     alert('Save failed');
   }
 }
+export async function deleteProjectDB(id) {
+
+  const { error } = await supabase
+    .from('projects')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('Delete error:', error);
+    alert('Delete failed');
+  }
+}

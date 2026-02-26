@@ -21,7 +21,7 @@ body{background:#f4f6f9;padding:20px}
 .deadline-none{background:transparent}
 </style>
 </head>
-<body>
+<body style="display:none;">
 <div class="container-fluid">
 <!-- Top Header Bar -->
 <div class="d-flex justify-content-end mb-3">
@@ -95,7 +95,7 @@ body{background:#f4f6f9;padding:20px}
 </div>
 
 <script type="module">
-import { loadProjects, saveProject as saveProjectDB, supabase } from './supabase.js';
+import { loadProjects, saveProject as saveProjectDB, deleteProjectDB, supabase } from './supabase.js';
 // ----------------------------------
 // AUTH GUARD (CORRECT VERSION)
 // ----------------------------------
@@ -110,8 +110,9 @@ if (!session) {
 supabase.auth.onAuthStateChange((event, session) => {
   if (!session) {
     window.location.replace('login.html');
-  }
-});
+} else {
+  document.body.style.display = 'block';
+}});
 const $=id=>document.getElementById(id);
 let tenders = [];
 async function initData() {
@@ -243,7 +244,18 @@ $('tbody').insertAdjacentHTML('beforeend',`<tr>
 function updateStatus(id,v){const t=tenders.find(x=>x.id===id);if(t){t.status=v;localStorage.setItem('tenders',JSON.stringify(tenders));render();}}
 function toggleContract(id){const t=tenders.find(x=>x.id===id);if(t){t.contract=t.contract==='Yes'?'No':'Yes';localStorage.setItem('tenders',JSON.stringify(tenders));render();}}
 function quickEdit(id){const t=tenders.find(x=>x.id===id);if(!t)return;$('formPanel').style.display='block';$('tid').value=t.id;$('pname').value=t.name;$('palias').value=t.alias;$('customer').value=t.customer;$('announceDate').value=t.announceDate;$('submissionDate').value=t.submissionDate||'';$('budget').value=t.projectValue;$('status').value=t.status;$('contract').value=t.contract;}
-function deleteProject(id){if(confirm('Delete this project?')){tenders=tenders.filter(t=>t.id!==id);localStorage.setItem('tenders',JSON.stringify(tenders));render();}}
+async function deleteProject(id){
+
+ if(!confirm('Delete this project?')) return;
+
+  await deleteProjectDB(id);
+
+  tenders = tenders.filter(t=>t.id!==id);
+
+  localStorage.setItem('tenders',JSON.stringify(tenders));
+
+  render();
+}
 // expose functions globally for inline HTML handlers
 window.updateStatus = updateStatus;
 window.toggleContract = toggleContract;
