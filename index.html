@@ -97,6 +97,9 @@ body{background:#f4f6f9;padding:20px}
 <script type="module">
 import { loadProjects, saveProject as saveProjectDB, deleteProjectDB, supabase } from './supabase.js';
 let projectsChannel = null;
+let tenders = []; 
+
+const $ = id => document.getElementById(id);
 // ----------------------------------
 // AUTH GUARD (CORRECT VERSION)
 // ----------------------------------
@@ -110,17 +113,22 @@ if (!session) {
 // Watch auth state changes
 supabase.auth.onAuthStateChange(async (event, session) => {
 
+  // No user → redirect
   if (!session) {
     window.location.replace('login.html');
     return;
   }
 
-  // ---------- INITIAL DATA LOAD ----------
+  // Prevent double initialization
+  if (document.body.dataset.initialized) return;
+  document.body.dataset.initialized = "true";
+
+  // ---------- LOAD DATA ----------
   const dbProjects = await loadProjects();
   tenders = dbProjects;
   render();
 
-  // ---------- START REALTIME ----------
+  // ---------- REALTIME ----------
   if (projectsChannel) {
     supabase.removeChannel(projectsChannel);
   }
@@ -142,7 +150,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     )
     .subscribe();
 
-  // ---------- SHOW PAGE ----------
+  // ---------- SHOW UI ----------
   document.body.style.display = 'block';
 });
 const COMPANY_BUDGET=1000000;
