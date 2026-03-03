@@ -24,11 +24,9 @@ body{background:#f4f6f9;padding:20px}
 <body style="display:none;">
 <div class="container-fluid">
 <!-- Top Header Bar -->
-<div class="d-flex justify-content-end mb-3">
-  <button id="logoutBtn" class="btn btn-sm btn-outline-danger">
-    Logout
-  </button>
-<div id="presenceBar" class="mb-3 small text-muted"></div>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div id="presenceBar" class="small text-muted"></div>
+  <button id="logoutBtn" class="btn btn-sm btn-outline-danger">Logout</button>
 </div>
 <!-- KPI ROW 1 -->
 <div class="row g-3 mb-3">
@@ -199,7 +197,7 @@ $('saveBtn').onclick=()=>saveProject(false);
 $('saveAddBtn').onclick=()=>saveProject(true);
 $('clearBtn').onclick=clearForm;
 
-function saveProject(keepOpen){
+async function saveProject(keepOpen){
 if(!validateForm())return;
 const id=$('tid').value.trim();
 let t=tenders.find(x=>x.id===id);
@@ -217,7 +215,7 @@ t.contract=$('contract').value;
 t.sellingValue=t.sellingValue??t.projectValue;
 
 localStorage.setItem('tenders',JSON.stringify(tenders));
-saveProjectDB(t);
+await saveProjectDB(t);
 clearForm();
 if(!keepOpen)$('formPanel').style.display='none';
 render();
