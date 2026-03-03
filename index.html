@@ -262,12 +262,18 @@ $('saveBtn').onclick=()=>saveProject(false);
 $('saveAddBtn').onclick=()=>saveProject(true);
 $('clearBtn').onclick=clearForm;
 $('toggleCalendar').onclick = () => {
-  const panel = $('calendarPanel');
-  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  const modalElement = document.getElementById('calendarModal');
+  const modal = new bootstrap.Modal(modalElement);
+  modal.show();
 
-  if (panel.style.display === 'block' && !calendar) {
-    initializeCalendar();
-  }
+  // Initialize only once
+  setTimeout(() => {
+    if (!calendar) {
+      initializeCalendar();
+    } else {
+      calendar.updateSize(); // Important for modal rendering
+    }
+  }, 200);
 };
 
 async function saveProject(keepOpen){
