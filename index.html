@@ -300,8 +300,10 @@ if(fc&&t.customer!==fc)return;
 if(fs&&t.status!==fs)return;
 if(fct&&t.contract!==fct)return;
 if (activeCalendarDate) {
-  if (t.announceDate !== activeCalendarDate && 
-      t.submissionDate !== activeCalendarDate) {
+  const announce = (t.announceDate || '').slice(0, 10);
+  const submit = (t.submissionDate || '').slice(0, 10);
+
+  if (announce !== activeCalendarDate && submit !== activeCalendarDate) {
     return;
   }
 }
@@ -386,10 +388,10 @@ function initializeCalendar() {
       document.querySelectorAll('.fc-daygrid-day')
         .forEach(d => d.classList.remove('active-date'));
 
-      if (activeCalendarDate === info.dateStr) {
+      if (activeCalendarDate === info.dateStr.slice(0, 10)) {
         activeCalendarDate = null;
       } else {
-        activeCalendarDate = info.dateStr;
+        activeCalendarDate = info.dateStr.slice(0, 10);
 
         // Highlight selected date
         info.dayEl.classList.add('active-date');
