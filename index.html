@@ -98,9 +98,9 @@ body{background:#f4f6f9;padding:20px}
 <script type="module">
 import { loadProjects, saveProject as saveProjectDB, deleteProjectDB, supabase } from './supabase.js';
 const USER_MAP = {
-  'ukrit@tender.local': '12345678',
-  'dy@tender.local': '12345678',
-  'admin@tender.local': '12345678'
+  'ukrit@tender.local': 'ukrit',
+  'dy@tender.local': 'dy',
+  'admin@tender.local': 'admin'
 };
 let projectsChannel = null;
 let presenceChannel = null;
@@ -348,7 +348,7 @@ window.deleteProject = deleteProject;
 ['searchBox','filterCustomer','filterStatus','filterContract'].forEach(id=>$(id).oninput=render);
 // Attach logout after DOM ready
 document.getElementById('logoutBtn').addEventListener('click', async () => {
-  await supabase.auth.signOut();
+  await supabase.auth.signOut({ scope: 'local' });
   window.location.replace('login.html');
 });
 
