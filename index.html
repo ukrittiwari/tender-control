@@ -19,7 +19,15 @@ body{background:#f4f6f9;padding:20px}
 .deadline-orange{background:#ffe5b4;color:#8a4b08;font-weight:600;border-radius:6px;padding:2px 6px}
 .deadline-red{background:#f8d7da;color:#842029;font-weight:700;border-radius:6px;padding:2px 6px}
 .deadline-none{background:transparent}
+/* Active Calendar Filter Highlight */
+.fc-daygrid-day.active-date .fc-daygrid-day-frame {
+  background-color: #cfe2ff !important;
+  border: 2px solid #0d6efd !important;
+  border-radius: 6px;
+}
 </style>
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 </head>
 <body style="display:none;">
 <div class="container-fluid">
@@ -53,6 +61,7 @@ body{background:#f4f6f9;padding:20px}
 <div class="d-flex gap-2">
 <input id="searchBox" class="form-control form-control-sm" style="width:220px" placeholder="Search ID or Alias">
 <button class="btn btn-sm btn-outline-secondary" id="toggleFilters">Filters</button>
+<button class="btn btn-sm btn-outline-info" id="toggleCalendar">Calendar</button>
 </div>
 <button class="btn btn-sm btn-primary" id="toggleForm">+ Add Project</button>
 </div>
@@ -64,6 +73,11 @@ body{background:#f4f6f9;padding:20px}
 <div class="col-md-4"><label class="form-label muted">Status</label><select id="filterStatus" class="form-select form-select-sm"><option value="">All</option><option>Announced</option><option>Submitted</option><option>L1</option><option>Negotiation</option><option>Order Placed</option><option>Pending Delivery</option><option>Delivered</option><option>Waiting Payment</option><option>Complete</option><option>Loss</option></select></div>
 <div class="col-md-4"><label class="form-label muted">Contract</label><select id="filterContract" class="form-select form-select-sm"><option value="">All</option><option>Yes</option><option>No</option></select></div>
 </div>
+</div>
+
+<!-- Calendar PANEL -->
+<div class="card p-3 mb-3" id="calendarPanel" style="display:none">
+  <div id="calendar"></div>
 </div>
 
 <!-- FORM -->
@@ -102,6 +116,8 @@ const USER_MAP = {
 let projectsChannel = null;
 let presenceChannel = null;
 let tenders = []; 
+let calendar;
+let activeCalendarDate = null;
 
 const $ = id => document.getElementById(id);
 // ----------------------------------
@@ -195,6 +211,14 @@ $('toggleFilters').onclick=()=>$('filterPanel').style.display=$('filterPanel').s
 $('saveBtn').onclick=()=>saveProject(false);
 $('saveAddBtn').onclick=()=>saveProject(true);
 $('clearBtn').onclick=clearForm;
+$('toggleCalendar').onclick = () => {
+  const panel = $('calendarPanel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+
+  if (panel.style.display === 'block' && !calendar) {
+    initializeCalendar();
+  }
+};
 
 async function saveProject(keepOpen){
 if(!validateForm())return;
@@ -275,6 +299,12 @@ if(search&&!(t.id.toLowerCase().includes(search)||(t.alias||'').toLowerCase().in
 if(fc&&t.customer!==fc)return;
 if(fs&&t.status!==fs)return;
 if(fct&&t.contract!==fct)return;
+if (activeCalendarDate) {
+  if (t.announceDate !== activeCalendarDate && 
+      t.submissionDate !== activeCalendarDate) {
+    return;
+  }
+}
 
 const today=new Date();
 let deadlineClass='deadline-none';
@@ -300,6 +330,7 @@ $('tbody').insertAdjacentHTML('beforeend',`<tr>
 <td><div class="dropdown"><button class="btn btn-sm btn-light" data-bs-toggle="dropdown">⋮</button><ul class="dropdown-menu dropdown-menu-end"><li><a class="dropdown-item" href="#" onclick="quickEdit('${t.id}')">Quick Edit</a></li>${t.contract==='Yes'?'':`<li><a class="dropdown-item text-danger" href="#" onclick="deleteProject('${t.id}')">Delete</a></li>`}</ul></div></td>
 </tr>`);
 });
+refreshCalendarEvents();
 }
 
 async function updateStatus(id,v){
@@ -336,6 +367,71 @@ async function deleteProject(id){
   localStorage.setItem('tenders',JSON.stringify(tenders));
 
   render();
+}
+function initializeCalendar() {
+
+  const calendarEl = document.getElementById('calendar');
+
+  calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'dayGridMonth',
+    height: 650,
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: ''
+    },
+    dateClick: function(info) {
+
+      // Remove previous highlight
+      document.querySelectorAll('.fc-daygrid-day')
+        .forEach(d => d.classList.remove('active-date'));
+
+      if (activeCalendarDate === info.dateStr) {
+        activeCalendarDate = null;
+      } else {
+        activeCalendarDate = info.dateStr;
+
+        // Highlight selected date
+        info.dayEl.classList.add('active-date');
+      }
+
+      render();
+    }
+  });
+
+  calendar.render();
+  refreshCalendarEvents();
+}
+function refreshCalendarEvents() {
+
+  if (!calendar) return;
+
+  calendar.removeAllEvents();
+
+  tenders.forEach(t => {
+
+    if (t.announceDate) {
+      calendar.addEvent({
+        title: 'Announced',
+        start: t.announceDate,
+        color: '#28a745'
+      });
+    }
+
+    if (t.submissionDate) {
+      calendar.addEvent({
+        title: 'Submission',
+        start: t.submissionDate,
+        color: '#dc3545'
+      });
+    }
+  });
+  if (activeCalendarDate) {
+  const dayCell = document.querySelector(`[data-date="${activeCalendarDate}"]`);
+  if (dayCell) {
+    dayCell.classList.add('active-date');
+  }
+}
 }
 // expose functions globally for inline HTML handlers
 window.updateStatus = updateStatus;
