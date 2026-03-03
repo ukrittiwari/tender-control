@@ -28,6 +28,7 @@ body{background:#f4f6f9;padding:20px}
   <button id="logoutBtn" class="btn btn-sm btn-outline-danger">
     Logout
   </button>
+<div id="presenceBar" class="mb-3 small text-muted"></div>
 </div>
 <!-- KPI ROW 1 -->
 <div class="row g-3 mb-3">
@@ -96,7 +97,13 @@ body{background:#f4f6f9;padding:20px}
 
 <script type="module">
 import { loadProjects, saveProject as saveProjectDB, deleteProjectDB, supabase } from './supabase.js';
+const USER_MAP = {
+  'ukrit@tender.local': '12345678',
+  'dy@tender.local': '12345678',
+  'admin@tender.local': '12345678'
+};
 let projectsChannel = null;
+let presenceChannel = null;
 let tenders = []; 
 
 const $ = id => document.getElementById(id);
@@ -152,6 +159,37 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 
   // ---------- SHOW UI ----------
   document.body.style.display = 'block';
+
+  // ---------- PRESENCE SYSTEM ----------
+
+if (presenceChannel) {
+  supabase.removeChannel(presenceChannel);
+}
+
+presenceChannel = supabase.channel('online-users', {
+  config: {
+    presence: { key: session.user.id }
+  }
+});
+
+presenceChannel
+  .on('presence', { event: 'sync' }, () => {
+    const state = presenceChannel.presenceState();
+    const users = Object.values(state).flat();
+    
+    const names = users.map(u => USER_MAP[u.email] || 'unknown');
+    
+    $('presenceBar').innerHTML = names.length
+      ? names.map(n => `🟢 ${n}`).join(' &nbsp;&nbsp; ')
+      : 'No users online';
+  })
+  .subscribe(async (status) => {
+    if (status === 'SUBSCRIBED') {
+      await presenceChannel.track({
+        email: session.user.email
+      });
+    }
+  });
 });
 const COMPANY_BUDGET=1000000;
 
