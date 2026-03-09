@@ -196,13 +196,23 @@ $('kpiProfit').textContent = formatCurrency(selling - cost);
 }
 
 function updateCost(index,field,value){
-if(field==='amount') value = Number(value)||0;
-project.costItems[index][field]=value;
 
-clearTimeout(debounceTimer);
-debounceTimer=setTimeout(()=>{
-renderCosts();
-},800);
+if(field==='amount') value = Number(value)||0;
+
+project.costItems[index][field] = value;
+
+// Recalculate totals without rebuilding table
+let total = 0;
+
+project.costItems.forEach(item=>{
+total += item.amount || 0;
+});
+
+project.totalCost = total;
+
+$('totalCostCell').textContent = formatCurrency(total);
+renderKPIs();
+
 }
 
 function addCostRow(){
@@ -210,7 +220,7 @@ project.costItems.push({category:'Material',description:'',amount:null});
 renderCosts();
 
 setTimeout(()=>{
-const inputs = document.querySelectorAll('#costTableBody input[type="number"]');
+const inputs = document.querySelectorAll('#costTableBody input');
 inputs[inputs.length-1]?.focus();
 },50);
 }
@@ -227,12 +237,14 @@ window.addCostRow = addCostRow;
 $('addCostBtn').onclick = addCostRow;
 $('saveProjectBtn').onclick = async ()=>{
 
-clearTimeout(debounceTimer);
+project.status = $('projectStatus').value;
+project.contract = $('projectContract').value;
 
-// ensure all values captured
-document.querySelectorAll('#costTableBody input[type="number"]').forEach((input,i)=>{
-project.costItems[i].amount = Number(input.value)||0;
-});
+await saveProjectDB(project);
+
+alert('Project saved');
+
+};
 
 renderCosts();
 
