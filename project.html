@@ -171,7 +171,7 @@ ${COST_CATEGORIES.map(c=>`<option ${item.category===c?'selected':''}>${c}</optio
 <input class="form-control form-control-sm" value="${item.description||''}" oninput="updateCost(${index},'description',this.value)">
 </td>
 <td>
-<input type="number" class="form-control form-control-sm text-end" value="${item.amount||0}" oninput="updateCost(${index},'amount',this.value)">
+<input type="number" class="form-control form-control-sm text-end" value="${item.amount ?? ''}" oninput="updateCost(${index},'amount',this.value)"onkeydown="if(event.key==='Enter'){addCostRow();}">
 </td>
 <td>
 <button class="btn btn-sm btn-outline-danger" onclick="removeCost(${index})">×</button>
@@ -204,16 +204,25 @@ renderCosts();
 },800);
 }
 
+function addCostRow(){
+project.costItems.push({category:'Material',description:'',amount:null});
+renderCosts();
+
+setTimeout(()=>{
+const inputs = document.querySelectorAll('#costTableBody input[type="number"]');
+inputs[inputs.length-1]?.focus();
+},50);
+}
+
 function removeCost(index){
 project.costItems.splice(index,1);
 renderCosts();
 }
 
-$('addCostBtn').onclick = ()=>{
-project.costItems.push({category:'Material',description:'',amount:0});
-renderCosts();
-};
+window.updateCost = updateCost;
+window.removeCost = removeCost;
 
+$('addCostBtn').onclick = addCostRow;
 $('saveProjectBtn').onclick = async ()=>{
 
 project.status = $('projectStatus').value;
