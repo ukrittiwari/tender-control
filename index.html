@@ -45,12 +45,6 @@ body{background:#f4f6f9;padding:20px}
   font-size: 0.8rem;
 }
 
-.fc-header-toolbar {
-  display: grid !important;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-}
-
 .fc .fc-daygrid-day {
   cursor: pointer;
 }
@@ -513,24 +507,22 @@ function refreshCalendarEvents() {
 
   calendar.setOption('dayCellDidMount', function(info) {
 
-  info.el.style.background = ''; // CLEAR FIRST
+    const dateStr = info.date.toISOString().slice(0,10);
 
-  const dateStr = info.date.toISOString().slice(0,10);
+    const hasAnnounce = announceDates.has(dateStr);
+    const hasSubmit = submissionDates.has(dateStr);
 
-  const hasAnnounce = announceDates.has(dateStr);
-  const hasSubmit = submissionDates.has(dateStr);
-
-  if (hasAnnounce && hasSubmit) {
-    info.el.style.background =
-      'linear-gradient(to right, rgba(13,110,253,0.25) 50%, rgba(220,53,69,0.25) 50%)';
-  } 
-  else if (hasAnnounce) {
-    info.el.style.background = 'rgba(13,110,253,0.25)';
-  } 
-  else if (hasSubmit) {
-    info.el.style.background = 'rgba(220,53,69,0.25)';
-  }
-});
+    if (hasAnnounce && hasSubmit) {
+      info.el.style.background = 
+        'linear-gradient(to right, rgba(13,110,253,0.25) 50%, rgba(220,53,69,0.25) 50%)';
+    } 
+    else if (hasAnnounce) {
+      info.el.style.background = 'rgba(13,110,253,0.25)';
+    } 
+    else if (hasSubmit) {
+      info.el.style.background = 'rgba(220,53,69,0.25)';
+    }
+  });
 
 }
 // expose functions globally for inline HTML handlers
