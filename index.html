@@ -32,12 +32,23 @@ body{background:#f4f6f9;padding:20px}
 }
 
 .fc .fc-toolbar-title {
-  font-size: 0.95rem;
+  font-size: 0.9rem !important;
   font-weight: 600;
+  text-align: center;
+}
+
+.fc .fc-toolbar {
+  justify-content: space-between;
 }
 
 .fc .fc-daygrid-day-number {
   font-size: 0.8rem;
+}
+
+.fc-header-toolbar {
+  display: grid !important;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
 }
 
 .fc .fc-daygrid-day {
@@ -47,7 +58,18 @@ body{background:#f4f6f9;padding:20px}
 .fc .fc-daygrid-day-frame {
   padding: 4px;
 }
+/* Remove link styling */
+.fc .fc-button {
+  background: none !important;
+  border: none !important;
+  color: #000 !important;
+  box-shadow: none !important;
+}
 
+.fc .fc-button:hover {
+  background: none !important;
+  color: #000 !important;
+}
 .fc-theme-standard td,
 .fc-theme-standard th {
   border: 1px solid #e9ecef;
@@ -441,7 +463,8 @@ function initializeCalendar() {
 
   calendar = new FullCalendar.Calendar(calendarEl, {
   initialView: 'dayGridMonth',
-  height: 340,
+  height: 'auto',
+  fixedWeekCount: false,
   headerToolbar: {
     left: 'prev',
     center: 'title',
@@ -449,6 +472,7 @@ function initializeCalendar() {
   },
   dayMaxEvents: false,
   displayEventTime: false,
+
   eventDisplay: 'background',
     dateClick: function(info) {
 
@@ -476,32 +500,38 @@ function refreshCalendarEvents() {
 
   if (!calendar) return;
 
-  calendar.removeAllEvents();
+  const announceDates = new Set();
+  const submissionDates = new Set();
 
   tenders.forEach(t => {
+    if (t.announceDate)
+      announceDates.add((t.announceDate || '').slice(0,10));
 
-    if (t.announceDate) {
-      calendar.addEvent({
-        start: (t.announceDate || '').slice(0,10),
-        display: 'background',
-        backgroundColor: 'rgba(13,110,253,0.25)'
-      });
-    }
-
-    if (t.submissionDate) {
-      calendar.addEvent({
-        start: (t.submissionDate || '').slice(0,10),
-        display: 'background',
-        backgroundColor: 'rgba(220,53,69,0.25)'
-      });
-    }
+    if (t.submissionDate)
+      submissionDates.add((t.submissionDate || '').slice(0,10));
   });
-  if (activeCalendarDate) {
-  const dayCell = document.querySelector(`[data-date="${activeCalendarDate}"]`);
-  if (dayCell) {
-    dayCell.classList.add('active-date');
+
+  calendar.setOption('dayCellDidMount', function(info) {
+
+  info.el.style.background = ''; // CLEAR FIRST
+
+  const dateStr = info.date.toISOString().slice(0,10);
+
+  const hasAnnounce = announceDates.has(dateStr);
+  const hasSubmit = submissionDates.has(dateStr);
+
+  if (hasAnnounce && hasSubmit) {
+    info.el.style.background =
+      'linear-gradient(to right, rgba(13,110,253,0.25) 50%, rgba(220,53,69,0.25) 50%)';
+  } 
+  else if (hasAnnounce) {
+    info.el.style.background = 'rgba(13,110,253,0.25)';
+  } 
+  else if (hasSubmit) {
+    info.el.style.background = 'rgba(220,53,69,0.25)';
   }
-}
+});
+
 }
 // expose functions globally for inline HTML handlers
 window.updateStatus = updateStatus;
