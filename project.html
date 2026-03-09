@@ -235,18 +235,8 @@ window.removeCost = removeCost;
 window.addCostRow = addCostRow;
 
 $('addCostBtn').onclick = addCostRow;
+
 $('saveProjectBtn').onclick = async ()=>{
-
-project.status = $('projectStatus').value;
-project.contract = $('projectContract').value;
-
-await saveProjectDB(project);
-
-alert('Project saved');
-
-};
-
-renderCosts();
 
 project.status = $('projectStatus').value;
 project.contract = $('projectContract').value;
