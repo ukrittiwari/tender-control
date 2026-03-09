@@ -106,11 +106,12 @@ Project not found. <a href="index.html">Return to main page</a>
 
 </div>
 
-<script>
+<script type="module">
+import { loadProjects, saveProject as saveProjectDB } from './supabase.js';
 const $ = id => document.getElementById(id);
 const COST_CATEGORIES = ['Sample','Material','Shipping','Other'];
 
-let tenders = JSON.parse(localStorage.getItem('tenders') || '[]');
+let tenders = [];
 let project = null;
 let debounceTimer = null;
 
@@ -124,6 +125,13 @@ return '฿' + (Number(val)||0).toLocaleString();
 
 function loadProject(){
 const id = getProjectId();
+async function loadProject(){
+
+const id = getProjectId();
+
+const dbProjects = await loadProjects();
+tenders = dbProjects;
+
 project = tenders.find(t=>t.id===id);
 
 if(!project){
@@ -204,14 +212,18 @@ project.costItems.push({category:'Material',description:'',amount:0});
 renderCosts();
 };
 
-$('saveProjectBtn').onclick = ()=>{
+$('saveProjectBtn').onclick = async ()=>{
+
 project.status = $('projectStatus').value;
 project.contract = $('projectContract').value;
-localStorage.setItem('tenders',JSON.stringify(tenders));
+
+await saveProjectDB(project);
+
 alert('Project saved');
+
 };
 
-loadProject();
+await loadProject();
 </script>
 </body>
 </html>
