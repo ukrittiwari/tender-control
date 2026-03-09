@@ -221,11 +221,18 @@ renderCosts();
 
 window.updateCost = updateCost;
 window.removeCost = removeCost;
+window.addCostRow = addCostRow;
 
 $('addCostBtn').onclick = addCostRow;
 $('saveProjectBtn').onclick = async ()=>{
 
 clearTimeout(debounceTimer);
+
+// ensure all values captured
+document.querySelectorAll('#costTableBody input[type="number"]').forEach((input,i)=>{
+project.costItems[i].amount = Number(input.value)||0;
+});
+
 renderCosts();
 
 project.status = $('projectStatus').value;
