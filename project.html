@@ -161,23 +161,29 @@ project.costItems.forEach((item,index)=>{
 total += item.amount || 0;
 
 body.insertAdjacentHTML('beforeend',`
-<tr>
+<tr data-index="${index}">
 <td>
-<select class="form-select form-select-sm" onchange="updateCost(${index},'category',this.value)">
+<select class="form-select form-select-sm cost-category">
 ${COST_CATEGORIES.map(c=>`<option ${item.category===c?'selected':''}>${c}</option>`).join('')}
 </select>
 </td>
+
 <td>
-<input class="form-control form-control-sm" value="${item.description||''}" oninput="updateCost(${index},'description',this.value)">
+<input class="form-control form-control-sm cost-description"
+value="${item.description||''}">
 </td>
+
 <td>
 <input type="number"
-class="form-control form-control-sm text-end" value="${item.amount ?? ''}" oninput="updateCost(${index},'amount',this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();updateCost(${index},'amount',this.value);addCostRow();}">
+class="form-control form-control-sm text-end cost-amount"
+value="${item.amount ?? ''}">
 </td>
+
 <td>
-<button class="btn btn-sm btn-outline-danger" onclick="removeCost(${index})">×</button>
+<button class="btn btn-sm btn-outline-danger cost-remove">×</button>
 </td>
-</tr>`);
+</tr>
+`);
 });
 
 project.totalCost = total;
@@ -230,13 +236,27 @@ project.costItems.splice(index,1);
 renderCosts();
 }
 
-window.updateCost = updateCost;
-window.removeCost = removeCost;
-window.addCostRow = addCostRow;
+function updateTotals(){
+
+let total = 0;
+
+project.costItems.forEach(item=>{
+total += item.amount || 0;
+});
+
+project.totalCost = total;
+
+$('totalCostCell').textContent = formatCurrency(total);
+
+renderKPIs();
+
+}
 
 $('addCostBtn').onclick = addCostRow;
 
 $('saveProjectBtn').onclick = async ()=>{
+
+renderCosts();
 
 project.status = $('projectStatus').value;
 project.contract = $('projectContract').value;
@@ -246,6 +266,58 @@ await saveProjectDB(project);
 alert('Project saved');
 
 };
+
+$('costTableBody').addEventListener('click', (e)=>{
+
+if(!e.target.classList.contains('cost-remove')) return;
+
+const row = e.target.closest('tr');
+const index = Number(row.dataset.index);
+
+project.costItems.splice(index,1);
+renderCosts();
+
+});
+
+$('costTableBody').addEventListener('keydown',(e)=>{
+
+if(!e.target.classList.contains('cost-amount')) return;
+
+if(e.key !== 'Enter') return;
+
+e.preventDefault();
+
+const row = e.target.closest('tr');
+const index = Number(row.dataset.index);
+
+project.costItems[index].amount = Number(e.target.value)||0;
+
+addCostRow();
+
+});
+
+$('costTableBody').addEventListener('input', (e)=>{
+
+const row = e.target.closest('tr');
+if(!row) return;
+
+const index = Number(row.dataset.index);
+
+if(e.target.classList.contains('cost-description')){
+project.costItems[index].description = e.target.value;
+}
+
+if(e.target.classList.contains('cost-amount')){
+project.costItems[index].amount = Number(e.target.value)||0;
+}
+
+if(e.target.classList.contains('cost-category')){
+project.costItems[index].category = e.target.value;
+}
+
+updateTotals();
+
+});
 
 await loadProject();
 </script>
