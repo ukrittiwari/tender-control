@@ -123,8 +123,6 @@ function formatCurrency(val){
 return '฿' + (Number(val)||0).toLocaleString();
 }
 
-function loadProject(){
-const id = getProjectId();
 async function loadProject(){
 
 const id = getProjectId();
@@ -132,7 +130,7 @@ const id = getProjectId();
 const dbProjects = await loadProjects();
 tenders = dbProjects;
 
-project = tenders.find(t=>t.id===id);
+project = tenders.find(t=>String(t.id)===String(id));
 
 if(!project){
 $('notFound').style.display='block';
@@ -142,10 +140,14 @@ return;
 $('projectContainer').style.display='block';
 $('projectTitle').textContent = project.name;
 $('projectMeta').textContent = project.id + ' · ' + project.customer;
-$('projectStatus').value = project.status;
-$('projectContract').value = project.contract;
+$('projectStatus').value = project.status || 'Announced';
+$('projectContract').value = project.contract || 'No';
 
 project.costItems = project.costItems || [];
+if(!Array.isArray(project.costItems)){
+project.costItems = [];
+}
+project.totalCost = project.totalCost || 0;
 renderCosts();
 renderKPIs();
 }
